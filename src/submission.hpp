@@ -12,7 +12,7 @@ class Grid {
 private:
   std::size_t rows_;
   std::size_t cols_;
-  std::vector<std::vector<double>> data_;
+  std::vector<double> data_;
 
 public:
   Grid(std::size_t rows, std::size_t cols);
@@ -25,14 +25,14 @@ public:
 };  
 
 Grid::Grid(std::size_t rows, std::size_t cols) : 
-rows_(rows), cols_(cols), data_(rows, std::vector<double>(cols, 0.0)) {}
+rows_(rows), cols_(cols), data_(rows * cols, 0.0) {}
 
 double& Grid::operator()(std::size_t i, std::size_t j) {
-  return data_[i][j];
+  return data_[i * cols_ + j];
 }
 
 double Grid::operator()(std::size_t i, std::size_t j) const {
-  return data_[i][j];
+  return data_[i * cols_ + j];
 }
 
 // Apply the five-point stencil over all interior points, copying the boundary
@@ -44,14 +44,20 @@ void apply_stencil(const Grid& old_grid, Grid& new_grid) {
     std::size_t cols = old_grid.get_cols();
 
     for (std::size_t i = 0; i < rows; ++i) {
-        for (std::size_t j = 0; j < cols; ++j) {
-            if (i == 0 || i == rows - 1 || j == 0 || j == cols - 1) {
-              new_grid(i, j) = old_grid(i, j);
-            } else {
-                new_grid(i, j) = 0.5  * old_grid(i, j) +
-                0.125 * (old_grid(i-1, j) + old_grid(i+1, j) +
-                         old_grid(i, j-1) + old_grid(i, j+1));
-            }
+      new_grid(i, 0) = old_grid(i, 0);
+      new_grid(i, cols - 1) = old_grid(i, cols - 1);
+    }
+    for (std::size_t i = 0; i < cols; ++i) {
+      new_grid(0, i) = old_grid(0, i);
+      new_grid(rows - 1, i) = old_grid(rows - 1, i);
+    }
+
+    for (std::size_t i = 1; i < rows - 1; ++i) {
+        for (std::size_t j = 1; j < cols - 1; ++j) {
+          new_grid(i, j) = 0.5  * old_grid(i, j) +
+          0.125 * (old_grid(i-1, j) + old_grid(i+1, j) +
+                    old_grid(i, j-1) + old_grid(i, j+1));
+
         }
     }
 }
